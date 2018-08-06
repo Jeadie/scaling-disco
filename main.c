@@ -18,13 +18,18 @@ int main(int argc, char** argv) {
         for(int j = 0; j< graph_size(g); j++) {
             fprintf(stdout, "%s", get_node_names(i)[j]);   
         }
-    }
+    } else {
+        printf("No hamiltonian path in graph");
+	}
+
     return 0; 
 }
 
 int* find_path(Graph* g) {
     int* solution = (int*) calloc(graph_size(g), sizeof(int)); 
-  
+    for (int i =0; i< graph_size(g); i++) {
+        solution[i] = -1; 
+	}
     //Create an empty path array and add vertex 0 to it. 
     for (int i= 0; i< graph_size(g); i++) {
         solution[0] = i; 
@@ -40,7 +45,8 @@ int add_index_at_i(Graph* g, int* sol, int i, int node) {
 // must keep track of be the highest node tried. Will first start at 0, 
     int current_n = sol[i-1]; 
     for (int j = 0; j < graph_size(g); j++) {
-        if((get_graph_value(g, current_n, j) == 1) & \
+     //   printf("%d -> %d, value: %d, solution %d\n", current_n, j, get_graph_value(g, current_n, j), node_in_solution(sol, j, i)); 
+		if((get_graph_value(g, current_n, j) == 1) & \
                  (node_in_solution(sol, j, i) == 0) & \
                  (j != current_n)) {
              // Set next node that is connected and hasn't been visited

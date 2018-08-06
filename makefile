@@ -6,7 +6,7 @@ FLAGS = -std=gnu99 -Wall -pedantic -g
 SRC=$(wildcard *.c)
 
 all: $(SRC)
-	gcc $^ $(FLAGS)  -o a.out
+	gcc $^ $(FLAGS) -O3 -o a.out
        
 %.o : %.c
 	$(CC) -c $(FLAGS) $< -o $@

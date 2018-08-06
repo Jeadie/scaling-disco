@@ -20,6 +20,12 @@ Graph* create_graph(int n, int e, int* source, int* dest) {
     for (int i =0; i<e; i++) {
          set_graph_value(g, source[i], dest[i], 1); 
     }
+	for (int i=0; i< n; i++) {
+        for(int j =0; j< n; j++) {
+            printf("%d", get_graph_value(g, j, i)); 
+		}
+	printf("\n"); 
+	} 
 
     return g;
 }
