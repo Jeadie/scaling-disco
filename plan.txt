@@ -1,9 +1,0 @@
-find hamiltonian path
-
-will need: 
- input parser
- graph structure 
- path checking status wrapper
- 
-
-
