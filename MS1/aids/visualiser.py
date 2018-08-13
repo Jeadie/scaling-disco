@@ -1,13 +1,14 @@
+import matplotlib.pyplot as plt
 import networkx as nx
 from cosc3500_ass1 import Graph
-import matplotlib.pyplot as plt
 
 
-def plot_graph(graph, solution): 
+def plot_graph(graph, solution=None): 
     G=nx.DiGraph()
     G.add_nodes_from(list(range(graph.n)))
-    G.add_edges_from([ x for x in graph.edges if x not in solution], color = 'black', width=1)
-    G.add_edges_from(solution, color='red', width=1)
+    G.add_edges_from([ x for x in graph.edges], color = 'black', width=1)
+    if solution:
+        G.add_edges_from(solution, color='red', width=1)
     edges = G.edges()
 
     colors = [G[u][v]['color'] for u,v in edges]
@@ -19,15 +20,16 @@ def plot_graph(graph, solution):
 
 def plot_path(graph_path, solution_path): 
     g=Graph.create_from_file(graph_path)
-    f=open(solution_path, "r")
-    nodes = [int(f.readline()) for i in range(g.n)]
-    path= [(nodes[i], nodes[i+1]) for i in range(g.n-1)]
-    plot_graph(g, path)
-
+    if solution_path: 
+        f=open(solution_path, "r")
+        nodes = [int(f.readline()) for i in range(g.n)]
+        path= [(nodes[i], nodes[i+1]) for i in range(g.n-1)]
+        plot_graph(g, solution=None)
+    plot_graph(g)
         
 def main(): 
     print("jjj")
-    plot_path("tests/8_True.txt", "tests/8.txt")
+    plot_path("5_false.txt", None)
     print("hhh")
 
 if __name__ == '__main__': 

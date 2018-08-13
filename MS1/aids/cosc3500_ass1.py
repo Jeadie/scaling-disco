@@ -44,15 +44,32 @@ class Graph(object):
         return graph
 
 
+
+
     def remove_hamiltonian_path(self): 
         for i in range(self.n): 
-            self.recurse_delete() 
+            self.recurse_delete([-1 if j !=i else i for j in range(self.n) ], 1) 
             
-    def recurse_delete(self): 
+    def recurse_delete(self, solution, i): 
+        c_n = solution[i-1]
+        for j in range(self.n):
+            if(self.has_edge(c_n, j) & (j != c_n) & (j not in solution)): 
+                solution[i] = j 
+                if(solution[-1] == -1): 
+                    if(self.recurse_delete(solution, i+1) != 1): 
+                        solution[i] = -1
+                else: 
+                    return 1
+            else: 
+                 solution[c_n] = 0 
+                 return 0
         
+        solution[c_n] = 0
+        return 0
 
     @staticmethod
     def create_non_hamiltonian_path(n, edges): 
+        """
         g = Graph(n-3)
         for i in range(edges-3): 
             a,b = (random.randint(0, g.n-1), random.randint(0, g.n-1))
@@ -65,6 +82,18 @@ class Graph(object):
             g.add_edge(random.randint(0, g.n-1), i)
         g.n = n
         return g
+        """
+        graph = Graph(n)
+        for i in range(edges):
+            a,b = (random.randint(0, n-1), random.randint(0, n-1))
+            if graph.has_edge(a,b):
+                edges+=1
+            graph.add_edge(a,b)
+        graph.remove_hamiltonian_path()
+        return graph
+
+
+
 
     def output_format(self): 
         output = []
@@ -81,9 +110,9 @@ def save_graph(n, hamiltonian, path):
 
 
 def main():
-    for n in range(2000, 5000, 200): #[5, 10, 15, 50, 200, 1000, 5000, 25000, 50000]: 
-        save_graph(n, True, "{0}_True.txt".format(n))
-        print("{0}_True.txt".format(n))
+    for n in range(5, 10): #[5, 10, 15, 50, 200, 1000, 5000, 25000, 50000]: 
+        #save_graph(n, True, "{0}_True.txt".format(n))
+       # print("{0}_True.txt".format(n))
         save_graph(n, False, "{0}_False.txt".format(n))
         print("{0}_False.txt".format(n))
 
