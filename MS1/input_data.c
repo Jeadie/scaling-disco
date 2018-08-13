@@ -33,19 +33,16 @@ int* get_edge_dest(Input* i) {
 
 Input* parse_input_from_file(char* path) {
     FILE* f = fopen(path, "r");
-    printf("%s %d \n", path, f); 
     size_t len = 0; 
     
     Input* i = (Input*) malloc(sizeof(Input)); 
     fscanf(f, "%d\n", &i->node_count); 
     fscanf(f, "%d\n", &i->edge_count); 
-    printf("%d %d\n", i->node_count, i->edge_count); 
     i->node_names = (char**) malloc(sizeof(char*) * i->node_count); 
 
     
     for(int j=0; j< i->node_count; j++) {
         getline(&i->node_names[j], &len, f); 
-        printf("%d  %s\n", len, i->node_names[j]); 
     } 
   
  

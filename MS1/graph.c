@@ -20,13 +20,6 @@ Graph* create_graph(int n, int e, int* source, int* dest) {
     for (int i =0; i<e; i++) {
          set_graph_value(g, source[i], dest[i], 1); 
     }
-	for (int i=0; i< n; i++) {
-        for(int j =0; j< n; j++) {
-            printf("%d", get_graph_value(g, j, i)); 
-		}
-	printf("\n"); 
-	} 
-
     return g;
 }
 
@@ -35,11 +28,11 @@ void free_graph(Graph* g) {
 }
 
 void set_graph_value(Graph* g, int x, int y, int v) {
-    g->matrix[(g->n * y) +x] = v; 
+    g->matrix[(g->n * x) +y] = v; 
 }
 
 int get_graph_value(Graph* g, int x, int y) {
-    return g->matrix[(g->n * y) +x];
+    return g->matrix[(g->n * x) +y];
 }
 
 int has_edge(Graph* g, int i, int j) {
