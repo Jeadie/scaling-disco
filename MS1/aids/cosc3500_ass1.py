@@ -7,13 +7,15 @@ class Graph(object):
 
     def __init__(self, n, edges=False): 
         self.n = n
+        self.graph = [[0 for x in range(n)] for y in range(n)]
         self.edges = edges if edges else []
-        
+         
     def add_edge(self, a,b): 
         self.edges.append((a, b))
-   
+        self.graph[a][b] = 1        
+
     def has_edge(self, a,b): 
-        return (a,b) in self.edges
+        return self.graph[a][b]
 
     @staticmethod 
     def create_from_file(path): 
@@ -41,6 +43,13 @@ class Graph(object):
 
         return graph
 
+
+    def remove_hamiltonian_path(self): 
+        for i in range(self.n): 
+            self.recurse_delete() 
+            
+    def recurse_delete(self): 
+        
 
     @staticmethod
     def create_non_hamiltonian_path(n, edges): 
