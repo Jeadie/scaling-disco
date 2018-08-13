@@ -4,12 +4,10 @@
 #include <stdio.h>
 #include <time.h>
 
-
 typedef struct {
     int* solution_indices; 
 	int* solution_order; 
 } Current_solution; 
-
 
 // Function delcarations
 int* find_path(Graph* g); 
@@ -34,8 +32,7 @@ int main(int argc, char** argv) {
     } else {
         printf("No hamiltonian path in graph");
 	}
-
-    return 0; 
+    exit(EXIT_SUCCESS); 
 }
 
 int* find_path(Graph* g) {
@@ -56,10 +53,9 @@ int* find_path(Graph* g) {
              return solution; 
         }
     }   
-
     return NULL; 
 }
-    
+
 int add_index_at_i(Graph* g, Current_solution* c_sol, int i, int node) {
 // must keep track of be the highest node tried. Will first start at 0, 
     int current_n = c_sol->solution_order[i-1];
