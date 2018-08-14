@@ -39,12 +39,13 @@ Input* parse_input_from_file(char* path) {
     fscanf(f, "%d\n", &i->node_count); 
     fscanf(f, "%d\n", &i->edge_count); 
     i->node_names = (char**) malloc(sizeof(char*) * i->node_count); 
+    int size; 
+    for(int j=0; j< (i->node_count -1); j++) {
+        size = getdelim(&i->node_names[j], &len, ',', f);
+		(i->node_names[j])[size-1] = '\0'; 
+	} 
+    getdelim(&i->node_names[i->node_count -1], &len, ',', f); 
 
-    
-    for(int j=0; j< i->node_count; j++) {
-        fscanf(f, "%s,\n", &i->node_names[j]);  
-    } 
-  
  
     i->edge_source = (int*) malloc(sizeof(int) * i->edge_count); 
     i->edge_dest = (int*) malloc(sizeof(int) * i->edge_count); 
