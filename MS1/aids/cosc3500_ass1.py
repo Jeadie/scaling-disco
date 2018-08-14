@@ -110,7 +110,7 @@ def save_graph(n, hamiltonian, path):
 
 
 def main():
-    for n in range(5, 10): #[5, 10, 15, 50, 200, 1000, 5000, 25000, 50000]: 
+    for n in range(24, 101, 2): #[5, 10, 15, 50, 200, 1000, 5000, 25000, 50000]: 
         #save_graph(n, True, "{0}_True.txt".format(n))
        # print("{0}_True.txt".format(n))
         save_graph(n, False, "{0}_False.txt".format(n))
