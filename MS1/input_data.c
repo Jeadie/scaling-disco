@@ -42,7 +42,7 @@ Input* parse_input_from_file(char* path) {
 
     
     for(int j=0; j< i->node_count; j++) {
-        getline(&i->node_names[j], &len, f); 
+        fscanf(f, "%s,\n", &i->node_names[j]);  
     } 
   
  
