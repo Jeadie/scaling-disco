@@ -21,7 +21,8 @@ int main(int argc, char** argv) {
 	Input* i = parse_input_from_file(argv[1]); 
     Graph* g = create_graph(get_node_count(i), get_edge_count(i), get_edge_source(i), get_edge_dest(i)); 
     if (g == NULL) {
-        exit(EXIT_FAILURE); 
+        fprintf(stdout, "pre-process\n");
+		exit(EXIT_FAILURE); 
 	}
 	size = graph_size(g); 
 	int* solution = find_path(g); 
@@ -33,7 +34,8 @@ int main(int argc, char** argv) {
             fprintf(stdout, "%s", get_node_names(i)[solution[j]]);   
         }
     } else {
-	    exit(EXIT_FAILURE); 
+	   fprintf(stdout, "No path \n");
+	   exit(EXIT_FAILURE); 
 	}
     exit(EXIT_SUCCESS); 
 }

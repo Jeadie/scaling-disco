@@ -44,7 +44,7 @@ Input* parse_input_from_file(char* path) {
         size = getdelim(&i->node_names[j], &len, ',', f);
 		(i->node_names[j])[size-1] = '\0'; 
 	} 
-    getdelim(&i->node_names[i->node_count -1], &len, ',', f); 
+    size = getdelim(&i->node_names[i->node_count -1], &len, ',', f); 
 
  
     i->edge_source = (int*) malloc(sizeof(int) * i->edge_count); 
