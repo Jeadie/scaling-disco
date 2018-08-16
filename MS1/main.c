@@ -30,9 +30,11 @@ int main(int argc, char** argv) {
 	fprintf(stderr, "%d %f\n", size, ((double)(end-start))/CLOCKS_PER_SEC); 
     
 	if(solution != NULL) {
-        for(int j = 0; j< size; j++) {
-            fprintf(stdout, "%s", get_node_names(i)[solution[j]]);   
+        for(int j = 0; j< size-1; j++) {
+            fprintf(stdout, "%s\n", get_node_names(i)[solution[j]]);   
         }
+        fprintf(stdout, "%s", get_node_names(i)[solution[size-1]]);   
+
     } else {
 	   fprintf(stdout, "No path \n");
 	   exit(EXIT_FAILURE); 
