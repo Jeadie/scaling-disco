@@ -3,8 +3,8 @@
 #include "graph.h"
 #include "input_data.h"
 
-int has_one_out_edge(int i, Graph* g);
-int has_one_in_edge(int i, Graph* g);
+int enough_out_edges(int i, Graph* g);
+int enough_in_edges(int i, Graph* g);
 Graph* pass_sufficient_conditions(Graph* g); 
 
 struct Graph {
@@ -27,54 +27,47 @@ Graph* create_graph(int n, int e, int* source, int* dest) {
     return pass_sufficient_conditions(g); 
 }
 
-int has_one_out_edge(int i, Graph* g) {
-   int count = -1; 
+int enough_in_edges(int i, Graph* g) {
+   int count = 0; 
    for (int j = 0 ; j < g->n; j++) {
        if (get_graph_value(g, j, i)) {
            count++;
-		   if (count > 0) {
-               return 0; 
+		   if (count > 1) {
+               return 2; 
 		   }
 	   }
    }
-   return 1; 
+   return count; 
 } 
 
-int has_one_in_edge(int i, Graph* g) {
-   int count = -1; 
+int enough_out_edges(int i, Graph* g) {
+   int count = 0; 
    for (int j = 0 ; j < g->n; j++) {
        if (get_graph_value(g, i, j)) {
            count++;
-		   if (count > 0) {
-               return 0; 
+		   if (count > 1) {
+               return 2; 
 		   }
 	   }
    }
-   return 1; 
+   return count; 
 }
 
 Graph* pass_sufficient_conditions(Graph* g) {
-    // Check for 2 single outward vertices 
-	
-	int edges = -1; 
+	int only_one_out = 0; 
+	int only_one_in = 0; 
 	for (int i = 0; i< g->n; i++) {
-        if (has_one_out_edge(i, g)) {
-            edges++; 
-		} 
-		if (edges > 0) {
-            return NULL; 
-		}
-	}
-
-
-    // Check for 2 single inward vertices 
-	edges = -1; 
-    for (int i = 0; i< g->n; i++) {
-        if (has_one_in_edge(i,g )) {
-            edges++; 
-		} 
-		if (edges > 0) {
-            return NULL; 
+        int a = enough_out_edges(i, g); 
+		int b = enough_in_edges(i, g); 
+		if (a + b < 2) {
+            if ( a+b ==0 ) {
+                return NULL; 
+			}
+			only_one_out += a;
+			only_one_in += b;
+			if ((only_one_out > 1) | (only_one_in > 1)) {
+                return NULL; 
+			}
 		}
 	}
     return g; 

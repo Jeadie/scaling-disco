@@ -12,6 +12,9 @@ class Graph(object):
         self.graph = [[0 for x in range(n)] for y in range(n)]
         self.edges = edges if edges else []
          
+    def remove_edge(self, a, b): 
+        self.edges.remove((a,b))
+        self.graph[a][b] = 0
 
     def add_edge(self, a,b): 
         """
@@ -32,7 +35,8 @@ class Graph(object):
         Returns: None
         """ 
         for i in range(self.n): 
-            self._recurse_delete([-1 if j !=i else i for j in range(self.n) ], 1) 
+            
+            self._recurse_delete([-1 if j != 0 else i for j in range(self.n)], 1) 
             
     def _recurse_delete(self, solution, i): 
         """
@@ -45,13 +49,15 @@ class Graph(object):
                 if(solution[-1] == -1): 
                     if(self._recurse_delete(solution, i+1) != 1): 
                         solution[i] = -1
-                else: 
-                    return 1
+                else:
+                    self.remove_edge(solution[-2] ,solution[-1])
+                    solution[c_n] = -1
+                    return 0
             else: 
-                 solution[c_n] = 0 
+                 solution[c_n] = -1
                  return 0
         
-        solution[c_n] = 0
+        solution[c_n] = -1
         return 0
 
     def output_format(self): 
@@ -61,7 +67,8 @@ class Graph(object):
         """
         output = []
         output.extend([str(self.n), str(len(self.edges))])
-        output.extend(["{},".format(x) for x in range(self.n)] )
+        output.extend(["{},".format(x) for x in range(self.n)])
+        output[-1] = output[-1][:-1]
         output.extend(["{0} {1}".format(edge[0], edge[1]) for edge in self.edges])
         return "\n".join(output)
     
@@ -73,7 +80,7 @@ class Graph(object):
         hamiltonian: will construct a graph with a hamiltonian path if True, else no path. 
         path: location to save the graph formatted to disk.         
         """
-        g = Graph.create_hamiltonian_path(n, int((n**(3/2)))) if hamiltonian else Graph.create_non_hamiltonian_path(n, int((n**(3/2))))
+        g = Graph.create_hamiltonian_path(n, int(n*4)) if hamiltonian else Graph.create_non_hamiltonian_path(n, int(n*4))
         f = open(path, "w")
         f.write(g.output_format())
         f.close()
@@ -138,7 +145,7 @@ class Graph(object):
 
 def main():
     sizes = []
-    sizes.extend([n for n in range(40)])
+    sizes.extend([n for n in range(1, 40)])
     sizes.extend([n for n in range(40, 100, 2)])
     sizes.extend([n for n in range(100, 1000, 10)])
    # sizes.extend([n for n in range(1000, 5000, 500)])
