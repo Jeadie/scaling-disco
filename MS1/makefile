@@ -7,7 +7,7 @@ SRC=$(wildcard *.c)
 
 all: $(SRC)
 	gcc $^ $(FLAGS) -O3 -o main.exe
-	#gcc $^ $(FLAGS) -O0 -pg -o main.exe
+	gcc $^ $(FLAGS) -O0 -pg -o main_slow.exe
        
 %.o : %.c
 	$(CC) -c $(FLAGS) $< -o $@

@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include "input_data.h"
 #include "graph.h"
+#include <string.h>
+
 
 struct Input {
   int node_count;
@@ -39,17 +41,20 @@ Input* parse_input_from_file(char* path) {
     fscanf(f, "%d\n", &i->node_count); 
     fscanf(f, "%d\n", &i->edge_count); 
     i->node_names = (char**) malloc(sizeof(char*) * i->node_count); 
-    int size; 
+    int size;
+    char buffer[100];  
     for(int j=0; j< (i->node_count -1); j++) {
-        size = getline(&i->node_names[j], &len, f);
-	    (i->node_names[j])[size-1] = '\0';
+	size = getline(&i->node_names[j], &len, f);
+          
+    	(i->node_names[j])[size-1] = '\0';
         (i->node_names[j])[size-2] = '\0';
 
-		len = 0;
-	} 
-	len = 0; 
+	len = 0;
+    } 
+    
+    len = 0; 
     size = getline(&i->node_names[i->node_count -1], &len, f); 
- 
+    (i->node_names[i->node_count - 1])[size-1] = '\0';
     i->edge_source = (int*) malloc(sizeof(int) * i->edge_count); 
     i->edge_dest = (int*) malloc(sizeof(int) * i->edge_count); 
   

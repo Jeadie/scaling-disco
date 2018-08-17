@@ -24,7 +24,7 @@ Graph* create_graph(int n, int e, int* source, int* dest) {
          set_graph_value(g, source[i], dest[i], 1); 
     }
 
-    return pass_sufficient_conditions(g); 
+    return g; //pass_sufficient_conditions(g); 
 }
 
 int enough_in_edges(int i, Graph* g) {

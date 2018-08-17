@@ -10,12 +10,12 @@ def plot_graph(graph, solution=None):
     """ 
     G=nx.DiGraph()
     G.add_nodes_from(list(range(graph.n)))
-    G.add_edges_from([ x for x in graph.edges], color = 'red', width=1)
-    width = ["red"] * graph.n
+    G.add_edges_from([ x for x in graph.edges], color = 'black', width=1)
+    width = ["black"] * graph.n
 
     # If hamiltonian path on top, add solution in red with green start node. 
     if solution:
-        G.add_edges_from(solution, color='black', width=1)
+        G.add_edges_from(solution, color='red', width=1)
         width[solution[0][0]] = 'green'
    
     edges = G.edges()
@@ -40,7 +40,7 @@ def plot_path(graph_path, solution_path):
     plot_graph(g)
         
 def main(): 
-    plot_path("7_False.txt", None)
+    plot_path("60.txt", "20_path.txt")
 
 if __name__ == '__main__': 
     main()

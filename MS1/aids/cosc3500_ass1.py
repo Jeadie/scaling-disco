@@ -80,7 +80,7 @@ class Graph(object):
         hamiltonian: will construct a graph with a hamiltonian path if True, else no path. 
         path: location to save the graph formatted to disk.         
         """
-        g = Graph.create_hamiltonian_path(n, int(n*4)) if hamiltonian else Graph.create_non_hamiltonian_path(n, int(n*4))
+        g = Graph.create_hamiltonian_path(n, int(n**1.5)) if hamiltonian else Graph.create_non_hamiltonian_path(n, int(n**1.5))
         f = open(path, "w")
         f.write(g.output_format())
         f.close()
@@ -145,15 +145,15 @@ class Graph(object):
 
 def main():
     sizes = []
-    sizes.extend([n for n in range(1, 40)])
-    sizes.extend([n for n in range(40, 100, 2)])
-    sizes.extend([n for n in range(100, 1000, 10)])
-   # sizes.extend([n for n in range(1000, 5000, 500)])
-    for n in sizes:
-        Graph.save_graph(n, True, "{0}_True.txt".format(n))
-        print("{0}_True.txt".format(n))
-        Graph.save_graph(n, False, "{0}_False.txt".format(n))
-        print("{0}_False.txt".format(n))
+
+    sizes.extend([n for n in range(5, 50)])
+    sizes.extend([n for n in range(5, 50)])
+ #   sizes.extend([n for n in range(40, 100, 2)])
+    for n, i in zip(sizes , range(len(sizes))):
+        Graph.save_graph(n, True, "{0}.txt".format(i))
+        print("{0}.txt".format(i))
+#       Graph.save_graph(n, False, "{0}_False.txt".format(n))a
+#       print("{0}_False.txt".format(n))
 
 if __name__ == '__main__': 
     main()
