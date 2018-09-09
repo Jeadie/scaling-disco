@@ -1,15 +1,8 @@
 #include "graph.h"
 #include <stdlib.h>
-
-
-typedef struct {
-  unsigned int* listSizes;  //Length of each list in stack
-  unsigned int capacity;    // Number of possible elements in list and number of lists in stack
-  unsigned int listPtr;		// number of elements in end list 
-  unsigned int stackPtr;	// number of lists in stack
-  int** s;					// a stack of lists of nodes
-} ListStack; 
-
+#include "stack.h"
+#define FOUND_PATH 5
+#define NO_PATH 6
 
 
 ListStack* create_stack(int capacity){ 
@@ -69,13 +62,6 @@ void add_to_current_stack(ListStack* stack, int node) {
 
 
 #define EMPTY -1; 
-typedef struct {
-    int* solution_indices; 
-	int* solution_order; 
-	int count; 
-	int capacity; 
-} Current_solution; 
-
 
 Current_solution* create_solution(int capacity) {
     Current_solution* sol = (Current_solution*) calloc(sizeof(Current_solution), 1); 
@@ -115,10 +101,9 @@ int solution_is_not_empty(Current_solution* sol) {
 	return sol->count != 0; 
 }
 
-int* iterative_search(int start, Graph* g) {
+int iterative_search(int start, Graph* g, Current_solution* sol) {
   ListStack* stack = create_stack(g->n); 
   int current_node; 
-  Current_solution* sol = create_solution(g->n); 
   
   while (solution_is_not_empty(sol)) {
 	// 1. check if last queue is empty. If so backtrack
@@ -132,18 +117,19 @@ int* iterative_search(int start, Graph* g) {
 	add_to_solution(sol, current_node); 
 	// 3. check solution
 	if (is_complete(sol)) {
-		return get_solution_order(sol); 
+		return FOUND_PATH;  
 	}
 	// 4. add all outgoing nodes from current to stack that aren't already there 
 	new_list(stack); 
-    for (int j = 0; j < g->n; j++) {
+    int j; 
+	for (j = 0; j < g->n; j++) {
 		if((get_graph_value(g, current_node, j) == 1) & (j != current_node) & (sol->solution_indices[j] == 0)) {
 			add_to_current_stack(stack, j); 
 		}
 	}
 
 }
-	return NULL; 
+	return NO_PATH; 
 
 }
 

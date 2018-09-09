@@ -18,9 +18,10 @@ int graph_size(Graph* g) {
 
 Graph* create_graph(int n, int e, int* source, int* dest) { 
     Graph* g = (Graph*)  malloc(sizeof(Graph));  
-    g->n = n;   
+    g->n = n;
+	int i;    
     g->matrix = (int*) calloc(n*n, sizeof(int)); 
-    for (int i =0; i<e; i++) {
+    for (i =0; i<e; i++) {
          set_graph_value(g, source[i], dest[i], 1); 
     }
 
@@ -29,7 +30,8 @@ Graph* create_graph(int n, int e, int* source, int* dest) {
 
 int enough_in_edges(int i, Graph* g) {
    int count = 0; 
-   for (int j = 0 ; j < g->n; j++) {
+   int j; 
+   for (j = 0 ; j < g->n; j++) {
        if (get_graph_value(g, j, i)) {
            count++;
 		   if (count > 1) {
@@ -42,7 +44,8 @@ int enough_in_edges(int i, Graph* g) {
 
 int enough_out_edges(int i, Graph* g) {
    int count = 0; 
-   for (int j = 0 ; j < g->n; j++) {
+   int j; 
+   for (j = 0 ; j < g->n; j++) {
        if (get_graph_value(g, i, j)) {
            count++;
 		   if (count > 1) {
@@ -56,7 +59,8 @@ int enough_out_edges(int i, Graph* g) {
 Graph* pass_sufficient_conditions(Graph* g) {
 	int only_one_out = 0; 
 	int only_one_in = 0; 
-	for (int i = 0; i< g->n; i++) {
+	int i; 
+	for (i = 0; i< g->n; i++) {
         int a = enough_out_edges(i, g); 
 		int b = enough_in_edges(i, g); 
 		if (a + b < 2) {
@@ -93,7 +97,8 @@ int has_edge(Graph* g, int i, int j) {
 int* out_edges(Graph* g, int n) {    
     int* edges = (int*) malloc(((g->n)+1) * sizeof(int));
     int j = 0; 
-    for  (int i =0; i < g->n; i++) {
+	int i; 
+    for (i =0; i < g->n; i++) {
         if (has_edge(g, n, i)) {
 	    edges[j] = i; 
 	    j++; 

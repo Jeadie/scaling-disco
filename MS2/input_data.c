@@ -43,7 +43,8 @@ Input* parse_input_from_file(char* path) {
     i->node_names = (char**) malloc(sizeof(char*) * i->node_count); 
     int size;
     char buffer[100];  
-    for(int j=0; j< (i->node_count -1); j++) {
+	int j; 
+    for(j=0; j< (i->node_count -1); j++) {
 	size = getline(&i->node_names[j], &len, f);
           
     	(i->node_names[j])[size-1] = '\0';
@@ -58,8 +59,8 @@ Input* parse_input_from_file(char* path) {
     i->edge_source = (int*) malloc(sizeof(int) * i->edge_count); 
     i->edge_dest = (int*) malloc(sizeof(int) * i->edge_count); 
   
-    int a,b; 
-    for (int j=0; j<i->edge_count; j++) {
+    int a, b; 
+    for (j=0; j<i->edge_count; j++) {
         if (fscanf(f, "%d %d\n", &a, &b) != 2) {
             return NULL;
         }
@@ -78,8 +79,8 @@ Input* parse_input_from_arg(int argc, char** argv) {
     i->edge_count = strtol(argv[1], (char**) NULL, 10); 
  
     i->node_names = (char**) malloc(sizeof(char*) * i->node_count); 
-
-    for(int j=0; j< i->node_count; j++) {
+	int j; 
+    for(j=0; j< i->node_count; j++) {
         i->node_names[j] = argv[j+2];       
     } 
   
@@ -87,7 +88,7 @@ Input* parse_input_from_arg(int argc, char** argv) {
     i->edge_dest = (int*) malloc(sizeof(int) * i->edge_count); 
   
     int a,b; 
-    for (int j=0; j<i->edge_count; j++) {
+    for (j=0; j<i->edge_count; j++) {
         if (sscanf(argv[j + i->node_count + 2], "%d %d", &a, &b) != 2) {
             return NULL;
         }

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <mpi.h>
 #include <omp.h> 
+#include "input_data.h"
 
 #define MASTER 0
 
@@ -13,19 +14,22 @@
 #define GRAPH_SIZE 2
 #define PROCESS_NODE 3 
 #define GRAPH_LOADED 4 
-
+#define FOUND_PATH 5
+#define NO_PATH 6
 int rank; 
 
 #define debug_print(fmt, ...) \
         do { if (DEBUG) fprintf(stderr, "rank: %d| %s:%d:%s(): " fmt, rank, __FILE__, \
 		                                __LINE__, __func__, __VA_ARGS__); } while (0)
+void master(int argc, char** argv); 
+void slave(); 
 
 
 int main(int argc, char** argv) {
-	MPI_init(&argc, &argv); 
+	MPI_Init(&argc, &argv); 
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
 	if(rank == MASTER) {
-		master(); 
+		master(argc, argv); 
 	} else {
 		slave(); 
 	}
@@ -33,31 +37,42 @@ int main(int argc, char** argv) {
 }
 
 void kill_slaves(int slaves) {
-	for (int i = 1; i < slaves; i++) {
+	int i; 
+	for (i = 1; i < slaves; i++) {
 		MPI_Send(0, 0, MPI_INT, i, PLEASE_DIE, MPI_COMM_WORLD); 
 	}
 }
 
 void send_graphs_to_slaves(int slaves, Graph* g) {
     int g_n = g->n; 
-	for (int i = 1; i < slaves; i++) {
-		MPI_Send(g_n, 1, MPI_INT, i, GRAPH_SIZE, MPI_COMM_WORLD); 
-		MPI_Send(g->matrix, g_n*g_n, MPI_INT, GRAPH_ELEMENTS, MPI_COMM_WORLD); 
+	int i; 
+	for (i = 1; i < slaves; i++) {
+		MPI_Send(&g_n, 1, MPI_INT, i, GRAPH_SIZE, MPI_COMM_WORLD); 
+		MPI_Send(&g->matrix, g_n*g_n, MPI_INT, i, GRAPH_ELEMENTS, MPI_COMM_WORLD); 
 	}
 	
 }
 
 int get_graph_from_master(Graph* g) {
 	MPI_Status status; 
-	MPI_Recv(g->n, 1, MPI_INT, MASTER, MPI_ANY_SOURCE, MPI_COMM_WORLD, &status); 
+	MPI_Recv(&g->n, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &status); 
 	if (status.MPI_TAG == PLEASE_DIE) {
 		return PLEASE_DIE; 
 	}
-	MPI_Recv(g->matrix, g->n * g->n, MPI_INT, MPI_ANY_SOURCE, MPI_COMM_WORLD, &status); 
+	MPI_Recv(&g->matrix, g->n * g->n, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &status); 
 	if (status.MPI_TAG == PLEASE_DIE) {
 		return PLEASE_DIE; 
 	}
 	return GRAPH_LOADED; 
+}
+
+void output_solution(int* solution, int size) {
+	int i; 
+	for (i=0; i< size-1 ; i++) {
+		fprintf(stdout, "%d\n", solution[i]); 
+	}
+	fprintf(stdout,"%d", solution[size-1]); 
+	
 }
 
 void master(int argc, char** argv) {
@@ -70,18 +85,18 @@ void master(int argc, char** argv) {
 		fprintf(stdout, "pre-process\n");
 		return; 
 	}
-	send_graph_to_slaves(slaves, g); 
+	send_graphs_to_slaves(slaves, g); 
 	node = 0; 
 
 	// Give each worker initial work. Unless there are less nodes than workers. 
 	int tasks = (slaves -1  > g->n) ? g->n : slaves -1; 
-	for (int node = 0; node < tasks; j++) {
-		MPI_Send(j, 1 MPI_INT, j+1, PROCESS_NODE, MPI_COMM_WORLD); 
+	for (node = 0; node < tasks; node++) {
+		MPI_Send(&node, 1, MPI_INT, node + 1, PROCESS_NODE, MPI_COMM_WORLD); 
 	}
 	tasks++; 
 	// If any, kill not used slaves (Will never be needed). 
-	for (tasks; tasks < slaves; tasks++) {
-		 MPI_Send(0, 0, MPI_INT, i, PLEASE_DIE, MPI_COMM_WORLD); 
+	for (tasks = tasks; tasks < slaves; tasks++) {
+		 MPI_Send(0, 0, MPI_INT, tasks, PLEASE_DIE, MPI_COMM_WORLD); 
 	}
 	
 	MPI_Status status; 
@@ -90,10 +105,10 @@ void master(int argc, char** argv) {
 	while(node < g->n) {
 		MPI_Recv(&solution, g->n, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status); 
 		if(status.MPI_TAG == FOUND_PATH) {
-			output_solution(solution); 
+			output_solution(solution, g->n); 
 			break; 
 		}
-		MPI_SEND(node, 1, MPI_INT, status.MPI_SOURCE, PROCESS_NODE, MPI_COMM_WORLD); 
+		MPI_Send(&node, 1, MPI_INT, status.MPI_SOURCE, PROCESS_NODE, MPI_COMM_WORLD); 
 		node++; 
 	}
 
@@ -109,12 +124,13 @@ void slave() {
     }
 	int start_node; 
 	MPI_Status status; 
-	while(true) {
-		MPI_Recv(&start_node, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPR_COMM_WORLD, &status); 
+	while(1) {
+		Current_solution* sol = create_solution(g.n); 
+		MPI_Recv(&start_node, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &status); 
 		if( status.MPI_TAG == PLEASE_DIE ) {
 			return; 	
-		} else if (iterative_search(start_node, &g) == 1) {
-			MPI_Send(&solution, g->n, MPI_INT, MASTER, FOUND_PATH, MPI_COMM_WORLD); 
+		} else if (iterative_search(start_node, &g, sol) == FOUND_PATH) {
+			MPI_Send(&sol->solution_order, g.n, MPI_INT, MASTER, FOUND_PATH, MPI_COMM_WORLD); 
 			return; 
 		}
 
