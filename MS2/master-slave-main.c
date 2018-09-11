@@ -86,21 +86,13 @@ int get_graph_from_master(Graph* g) {
 	return GRAPH_LOADED; 
 }
 
-void output_solution(int* solution, int size) {
-	int i; 
-	printf("The official solution is: \n"); 
-	for (i=0; i< size ; i++) {
-		fprintf(stdout, "%d %d\n", solution [i],  solution[i]); 
-	}
-	
-}
 
 void master(int argc, char** argv) {
 	int size = 2; 
 	int node = 0 ; 
 	//fprintf(stdout, "%d|master\n", slaves); 
 	//TODO: please uncomment actual number of slaves
-	//MPI_Comm_size(MPI_COMM_WORLD, &size); 
+	MPI_Comm_size(MPI_COMM_WORLD, &size); 
 	int slaves = size -1; 
 	Input* i = parse_input_from_file(argv[1]); 
     Graph* g = create_graph(get_node_count(i), get_edge_count(i), get_edge_source(i), get_edge_dest(i));
@@ -129,7 +121,7 @@ void master(int argc, char** argv) {
 	while(node < g->n) {
 		MPI_Recv(&solution, g->n, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status); 
 		if(status.MPI_TAG == FOUND_PATH) {
-			output_solution(solution, g->n); 
+			print_solution(solution, g->n); 
 			break; 
 		} else {
 			printf("not a solution. sad \n"); 
@@ -157,7 +149,7 @@ void print_graph(Graph* g) {
 void print_solution(int* x, int n) {
 	int i =0; 
 	for (i =0; i < n; i++) {
-		printf("a %d\n", x[i]); 
+		fprintf(stderr, "%d\n", x[i]); 
 	}
 }
 
@@ -179,8 +171,6 @@ void slave() {
 		if( status.MPI_TAG == PLEASE_DIE ) {
 			return; 	
 		} else if (iterative_search(start_node, g, sol, start_node) == FOUND_PATH) {
-			print_solution(sol->solution_order, g->n);  
-			printf("finishing slave at node %d.\n", start_node); 
 			MPI_Send(sol->solution_order, g->n, MPI_INT, MASTER, FOUND_PATH, MPI_COMM_WORLD); 
 			return; 
 		}

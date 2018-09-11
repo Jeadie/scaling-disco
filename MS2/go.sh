@@ -7,5 +7,5 @@
 #SBATCH --ntasks-per-node=1
 
 module load mpi/openmpi-x86_64
-
-mpirun -n 4 main.exe new_tests/5_True.txt
+rm log.txt
+mpirun -n 4 main.exe new_tests/50_True.txt 2> log.txt
