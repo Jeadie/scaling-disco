@@ -3,7 +3,7 @@
 #include "stack.h"
 #define FOUND_PATH 5
 #define NO_PATH 6
-
+#include <mpi.h>
 
 ListStack* create_stack(int capacity){ 
    
@@ -27,7 +27,7 @@ void remove_last_list(ListStack* stack) {
 	int listInd = stack->stackPtr - 1;
 	int* list  = stack->s[listInd]; 
 	// free list
-	free(list); 
+	// free(list); 
 	// change stackPtr and zero list length
 	stack->listSizes[listInd] = 0; 
     stack->stackPtr--; 
@@ -37,7 +37,8 @@ int pop_last_node_off_list(ListStack* stack) {
 	// get value
     int value = stack->s[stack->stackPtr -1][stack->listSizes[stack->stackPtr -1]-1]; 
 	// reduce list size of last list
-	stack->listSizes[stack->stackPtr]-- ; 
+	stack->listSizes[stack->stackPtr]--; 
+	printf("popped %d off stack.\n", value); 
 	return value; 
 }  
 
@@ -46,12 +47,15 @@ void new_list(ListStack* stack) {
 	int* list = calloc(sizeof(int), stack->capacity); 
 	// set to last in stack
 	stack->s[stack->stackPtr] = list;
+	printf("made new list at %d.\n", stack->stackPtr); 
 	// add to stackptr
-	stack->stackPtr++; 
+	stack->listSizes[stack->stackPtr] = 0; 
+	stack->stackPtr++;
+
 }
 
 void add_to_current_stack(ListStack* stack, int node) {
-
+	printf("adding %d to current list at %d.\n", node, stack->listSizes[stack->stackPtr-1]); 
 	// Grab number of elements in last list
 	int size = stack->listSizes[stack->stackPtr - 1]; 
 // set last element of last list to node
@@ -80,12 +84,15 @@ void remove_last_node(Current_solution* sol) {
 	sol->solution_indices[v] = 0; 
 	// set last element of order to EMPTY
 	sol->solution_order[v] = EMPTY; 
+	sol->count--;
+	printf("Removed %d from solution at postiion %d.\n", v, sol->count +1); 
 }
 
 void add_to_solution(Current_solution* sol, int v) {
     sol->solution_order[sol->count] = v; 
 	sol->count++; 
 	sol->solution_indices[v] = 1; 
+	printf("Added %d to solution at position %d.\n", v, sol->count -1); 
 }
 
 int is_complete(Current_solution* sol) {
@@ -101,34 +108,42 @@ int solution_is_not_empty(Current_solution* sol) {
 	return sol->count != 0; 
 }
 
-int iterative_search(int start, Graph* g, Current_solution* sol) {
+int iterative_search(int start, Graph* g, Current_solution* sol, int node) {
+  int rank = -1; 
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
   ListStack* stack = create_stack(g->n); 
   int current_node; 
-  
-  while (solution_is_not_empty(sol)) {
+  new_list(stack); 
+  add_to_current_stack(stack, node); 
+  do {
 	// 1. check if last queue is empty. If so backtrack
 	if (last_list_is_empty(stack)) {
+		printf("Backtracking from %d.\n", stack->stackPtr); 
 		remove_last_list(stack); 
 		remove_last_node(sol); 
 		continue; 
 	}
 	// 2. grab last item of last list and put as current and to solution
 	current_node = pop_last_node_off_list(stack); 
+	printf("STACK ptr____________%d\n", stack->stackPtr); 
+	printf("NODE_________________%d\n", current_node); 
 	add_to_solution(sol, current_node); 
 	// 3. check solution
 	if (is_complete(sol)) {
+		printf("%d: Exiting search\n", rank); 
 		return FOUND_PATH;  
 	}
 	// 4. add all outgoing nodes from current to stack that aren't already there 
 	new_list(stack); 
-    int j; 
+    int j; 	
 	for (j = 0; j < g->n; j++) {
-		if((get_graph_value(g, current_node, j) == 1) & (j != current_node) & (sol->solution_indices[j] == 0)) {
+		if((get_graph_value(g, current_node, j) == 1)& (j != current_node)& (sol->solution_indices[j] == 0))  {
 			add_to_current_stack(stack, j); 
 		}
 	}
 
-}
+}  while (solution_is_not_empty(sol));
+
 	return NO_PATH; 
 
 }

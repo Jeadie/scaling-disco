@@ -1,7 +1,7 @@
 src = *.c
 obj = $(src:.c=.o)
-CC = mpigcc
-FLAGS = -Wall -pedantic -g 
+CC = mpicc
+FLAGS = -g 
 
 SRC=$(wildcard *.c)
 

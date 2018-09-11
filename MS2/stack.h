@@ -17,7 +17,7 @@ typedef struct {
 	int capacity; 
 } Current_solution; 
 
-int iterative_search(int start, Graph* g, Current_solution* sol) ;
+int iterative_search(int start, Graph* g, Current_solution* sol, int start_node) ;
 Current_solution* create_solution(int capacity); 
 
 
