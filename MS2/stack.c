@@ -6,6 +6,9 @@
 #include <mpi.h>
 #define EMPTY -1; 
 
+
+int rank; 
+FILE* log; 
 ListStack* create_stack(int capacity){ 
    
 	ListStack* stack = (ListStack*) malloc(sizeof(ListStack)); 
@@ -17,6 +20,16 @@ ListStack* create_stack(int capacity){
 	return stack; 
 
 }
+void free_stack(ListStack* stack) {
+	free(stack->listSizes); 
+	int i; 
+	for (i = 0; i < stack->stackPtr; i++) {
+        free(stack->s[i]); 
+	}
+	free(stack->s); 
+	free(stack); 
+}
+
 
 // List Stack functions  
 int last_list_is_empty(ListStack* s) {
@@ -28,7 +41,7 @@ void remove_last_list(ListStack* stack) {
 	int listInd = stack->stackPtr - 1;
 	int* list  = stack->s[listInd]; 
 	// free list
-	// free(list); 
+	free(list); 
 	// change stackPtr and zero list length
 	stack->listSizes[listInd] = 0; 
     stack->stackPtr--; 
@@ -83,7 +96,12 @@ Current_solution* create_solution(int capacity) {
 	return sol; 
 }
 
-// Solution functions
+void alloc_solution(Current_solution* sol) {
+    free(sol->solution_order); 
+	free(sol->solution_indices); 
+	free(sol); 
+}
+
 void remove_last_node(Current_solution* sol) {
 	// get node from order    
 	int v = sol->solution_order[sol->count -1]; 
@@ -115,19 +133,66 @@ int solution_is_not_empty(Current_solution* sol) {
 	return sol->count != 0; 
 }
 
+int add_index_at_i(Graph* g, Current_solution* c_sol, int i, int node) {
+// must keep track of be the highest node tried. Will first start at 0, 
+    int size = g->n; 
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
+	int j;
+    int current_n = c_sol->solution_order[i-1];
+	for (j = 0; j < size; j++) {
+		if((get_graph_value(g, current_n, j) == 1) & \
+                 (j != current_n) & \
+				 (c_sol->solution_indices[j] == 0)) {
+             // Set next node that is connected and hasn't been visited
+			 add_to_solution(c_sol, j); 
+	         // check completeness first. If empty nodes in order, must recurse
+		     if(is_complete(c_sol) == 0) {
+                 if (add_index_at_i(g, c_sol, i+1, 0) != 1) {
+                      // backtrack and try next node
+				     remove_last_node(c_sol); 
+                  } else {
+                      // backtracking with finished solution. just need to exit.  
+                      return 1; 
+                         } 
+             } else {
+                 return 1; 
+             }   
+        }
+
+    }
+	c_sol->solution_indices[current_n] = 0; 
+    return 0; 
+}
 int iterative_search(int start, Graph* g, Current_solution* sol, int node) {
-  int rank = -1; 
+  int use_bfs= 1; 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
+  char path[8]; 
+  sprintf(path, "%d.log", rank); 
+  log = fopen(path, "w"); 
+  fprintf(log, "____________start_____________\n"); 
+  int outcome; 
+  if (use_bfs) {
+      outcome = bfs(start, g, sol, node);
+
+  } else {
+   add_to_solution(sol, node); 
+   outcome = add_index_at_i(g, sol,  1, 0) == 1 ? FOUND_PATH : NO_PATH; 
+  }
+  fclose(log); 
+  return outcome; 
+  
+}
+  
+int bfs(int start, Graph* g, Current_solution* sol, int node) {
   ListStack* stack = create_stack(g->n); 
   int current_node = -1; 
   new_list(stack); 
-  add_to_current_stack(stack, node); 
+  add_to_current_stack(stack, node);
   do {
-//	printf("STACK ptr____________%d\n", stack->stackPtr); 
-//	printf("NODE_________________%d\n", current_node); 
+    //fprintf(log, "STACK ptr____________%d\n", stack->stackPtr);
+    //fprintf(log, "NODE_________________%d\n", current_node);
 	// 1. check if last queue is empty. If so backtrack
 	if (last_list_is_empty(stack)) {
-//		printf("Backtracking from %d.\n", stack->stackPtr); 
 		remove_last_list(stack); 
 		remove_last_node(sol); 
 		continue; 
@@ -139,21 +204,27 @@ int iterative_search(int start, Graph* g, Current_solution* sol, int node) {
 	// 3. check solution
 	if (is_complete(sol)) {
 		printf("%d: Exiting search\n", rank); 
+		free_stack(stack); 
 		return FOUND_PATH;  
 	}
 	// 4. add all outgoing nodes from current to stack that aren't already there 
 	new_list(stack); 
     int j; 	
+	#pragma omp parallel private(j)
+    {
 	for (j = 0; j < g->n; j++) {
 		if((get_graph_value(g, current_node, j) == 1)& (j != current_node)& (sol->solution_indices[j] == 0))  {
-			add_to_current_stack(stack, j); 
+			#pragma omp critical
+            {
+		    	add_to_current_stack(stack, j); 
+            }
 		}
 	}
+    }
 
 }  while (solution_is_not_empty(sol));
-
+	free_stack(stack); 
 	return NO_PATH; 
-
 }
 
 
