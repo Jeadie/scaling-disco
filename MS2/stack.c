@@ -8,7 +8,6 @@
 
 
 int rank; 
-FILE* log; 
 ListStack* create_stack(int capacity){ 
    
 	ListStack* stack = (ListStack*) malloc(sizeof(ListStack)); 
@@ -133,7 +132,58 @@ int solution_is_not_empty(Current_solution* sol) {
 	return sol->count != 0; 
 }
 
-int add_index_at_i(Graph* g, Current_solution* c_sol, int i, int node) {
+int recursive_parallel_dfs(Graph* g, Current_solution* c_sol, int i, int node) {
+/*
+ * A recursive dfs search using a openMP based thread parallelism for recursive calls. 
+ */
+
+// must keep track of be the highest node tried. Will first start at 0, 
+    int size = g->n; 
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
+	int j;
+    int current_n = c_sol->solution_order[i-1];
+	int* out_bound = calloc(sizeof(int), size -i); 
+    int out_count = 0; 
+	
+	#pragma omp parallel private(j, c_sol)
+{	
+	for (j = 0; j < size; j++) {
+		if((get_graph_value(g, current_n, j) == 1) & \
+                 (j != current_n) & \
+				 (c_sol->solution_indices[j] == 0)) { 
+			 //printf("%d at level %d.\n", j, i); 	
+             // Set next node that is connected and hasn't been visited
+			 add_to_solution(c_sol, j); 
+	         // check completeness first. If empty nodes in order, must recurse
+		     if(is_complete(c_sol) == 0) {
+                 if (recursive_parallel_dfs(g, c_sol, i+1, 0) != 1) {
+                      // backtrack and try next node
+               //      printf("remove %d at level %d.\n", j,i); 
+				     remove_last_node(c_sol); 
+                  } else {
+                      // backtracking with finished solution. just need to exit.  
+                      // TODO free out_bound list
+                      // free(out_bound); 
+                 //     printf("correct. backtracking\n");
+                      return 1; 
+                         } 
+             } else {
+               // printf("Outer correct. backtracking\n");  
+				return 1; 
+             }   
+        }
+    }
+}
+    // TODO: free outbound list
+    //free(out_bound); 
+	c_sol->solution_indices[current_n] = 0; 
+    return 0; 
+}
+int recursive_dfs(Graph* g, Current_solution* c_sol, int i, int node) {
+/*
+ * A recursive dfs search with no preprocessing or threading. 
+ */ 
+
 // must keep track of be the highest node tried. Will first start at 0, 
     int size = g->n; 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
@@ -142,43 +192,92 @@ int add_index_at_i(Graph* g, Current_solution* c_sol, int i, int node) {
 	for (j = 0; j < size; j++) {
 		if((get_graph_value(g, current_n, j) == 1) & \
                  (j != current_n) & \
-				 (c_sol->solution_indices[j] == 0)) {
+				 (c_sol->solution_indices[j] == 0)) { 
+		
              // Set next node that is connected and hasn't been visited
 			 add_to_solution(c_sol, j); 
 	         // check completeness first. If empty nodes in order, must recurse
 		     if(is_complete(c_sol) == 0) {
-                 if (add_index_at_i(g, c_sol, i+1, 0) != 1) {
+                 if (recursive_dfs(g, c_sol, i+1, 0) != 1) {
+                      // backtrack and try next node
+				     remove_last_node(c_sol); 
+                  } else {
+                      return 1; 
+                  } 
+             } else {
+                 return 1; 
+             }   
+        }
+	}
+    // TODO: free outbound list
+	c_sol->solution_indices[current_n] = 0; 
+    return 0; 
+}
+
+
+int recursive_prelist_dfs(Graph* g, Current_solution* c_sol, int i, int node) {
+/*
+ * A recursive dfs search using a preprocessed list of outgoing nodes. preprocessing is 
+ * parallel, recursive calls are not. 
+ */ 
+
+// must keep track of be the highest node tried. Will first start at 0, 
+    int size = g->n; 
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
+	int j;
+    int current_n = c_sol->solution_order[i-1];
+	int* out_bound = calloc(sizeof(int), size -i); 
+    int out_count = 0; 
+	for (j = 0; j < size; j++) {
+		if((get_graph_value(g, current_n, j) == 1) & \
+                 (j != current_n) & \
+				 (c_sol->solution_indices[j] == 0)) { 
+		
+		out_bound[out_count] = j; 
+        out_count++; 
+		}
+	}
+
+    for (j=0; j < out_count; j++) {
+             // Set next node that is connected and hasn't been visited
+			 add_to_solution(c_sol, out_bound[j]); 
+	         // check completeness first. If empty nodes in order, must recurse
+		     if(is_complete(c_sol) == 0) {
+                 if (recursive_prelist_dfs(g, c_sol, i+1, 0) != 1) {
                       // backtrack and try next node
 				     remove_last_node(c_sol); 
                   } else {
                       // backtracking with finished solution. just need to exit.  
+                      // TODO free out_bound list
+                      free(out_bound); 
                       return 1; 
                          } 
              } else {
                  return 1; 
              }   
         }
-
-    }
+    // TODO: free outbound list
+    free(out_bound); 
 	c_sol->solution_indices[current_n] = 0; 
     return 0; 
 }
-int iterative_search(int start, Graph* g, Current_solution* sol, int node) {
-  int use_bfs= 1; 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
-  char path[8]; 
-  sprintf(path, "%d.log", rank); 
-  log = fopen(path, "w"); 
-  fprintf(log, "____________start_____________\n"); 
-  int outcome; 
-  if (use_bfs) {
-      outcome = bfs(start, g, sol, node);
 
+
+int iterative_search(int start, Graph* g, Current_solution* sol, int node) {
+  int dfs_mode = 0; 
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
+  int outcome; 
+  if (dfs_mode == 2) {
+    add_to_solution(sol, node); 
+    outcome = recursive_dfs(g, sol,  1, 0) == 1 ? FOUND_PATH : NO_PATH; 
+
+  } else if (dfs_mode == 1) {
+	add_to_solution(sol, node); 
+    outcome = recursive_prelist_dfs(g, sol,  1, 0) == 1 ? FOUND_PATH : NO_PATH; 
   } else {
    add_to_solution(sol, node); 
-   outcome = add_index_at_i(g, sol,  1, 0) == 1 ? FOUND_PATH : NO_PATH; 
+   outcome = recursive_parallel_dfs(g, sol,  1, 0) == 1 ? FOUND_PATH : NO_PATH; 
   }
-  fclose(log); 
   return outcome; 
   
 }
@@ -189,8 +288,7 @@ int bfs(int start, Graph* g, Current_solution* sol, int node) {
   new_list(stack); 
   add_to_current_stack(stack, node);
   do {
-    //fprintf(log, "STACK ptr____________%d\n", stack->stackPtr);
-    //fprintf(log, "NODE_________________%d\n", current_node);
+	
 	// 1. check if last queue is empty. If so backtrack
 	if (last_list_is_empty(stack)) {
 		remove_last_list(stack); 

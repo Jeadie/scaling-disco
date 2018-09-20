@@ -75,7 +75,7 @@ void send_graphs_to_slaves(int slaves, Graph* g) {
 		int g_n = g->n; 
 		int i; 
 		// 0 is master. slaves are then 1 indexed.  
-#pragma omp parallel private(i)
+		#pragma omp parallel private(i)
 		{
 				for (i = 1; i <= slaves; i++) {
 						MPI_Send(&g_n, 1, MPI_INT, i, GRAPH_SIZE, MPI_COMM_WORLD); 
@@ -87,7 +87,7 @@ void send_graphs_to_slaves(int slaves, Graph* g) {
 
 int get_graph_from_master(Graph* g) {
 		/**
-		 * MPI protocol to receive graph struct from master node. 
+		/ * MPI protocol to receive graph struct from master node. 
 		 */ 
 		MPI_Status status; 
 		MPI_Recv(&g->n, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &status); 
@@ -112,24 +112,21 @@ void master(int argc, char** argv) {
 		int node = 0 ; 
 		MPI_Comm_size(MPI_COMM_WORLD, &size); 
 		int slaves = size -1; 
-		fprintf(stdout, "before input\n"); 
 		Input* i = parse_input_from_file(argv[1]); 
-		fprintf(stdout, "before graph\n"); 
 		Graph* g = create_graph(get_node_count(i), get_edge_count(i), get_edge_source(i), get_edge_dest(i));
-		fprintf(stdout, "made graph\n"); 
+		printf("master preprocessing. %f.\n", (double) ((clock() - start)/ CLOCKS_PER_SEC)); 
 		if (g == NULL) {
 				kill_slaves(slaves); 
-				fprintf(stdout, "pre-process\n");
 				return; 
 		}
+		time_t worker_start = clock(); 
 		send_graphs_to_slaves(slaves, g); 
 		node = 0; 
 		// Give each worker initial work. Unless there are less nodes than workers. 
 		int tasks = (slaves > g->n) ? g->n : slaves; 
-#pragma omp parallel private(node)
+		#pragma omp parallel private(node)
 		{
 				for (node = 0; node < tasks; node++) {
-						printf("master send %d\n", node); 
 						MPI_Send(&node, 1, MPI_INT, node + 1, PROCESS_NODE, MPI_COMM_WORLD); 
 				}
 		}
@@ -138,10 +135,9 @@ void master(int argc, char** argv) {
 		for (tasks = tasks; tasks < slaves; tasks++) {
 				MPI_Send(0, 0, MPI_INT, tasks, PLEASE_DIE, MPI_COMM_WORLD); 
 		}
-
+		printf("worker preprocessing. %f.\n", (double) ((clock() - worker_start)/ CLOCKS_PER_SEC)); 
 		MPI_Status status; 
 		int solution[g->n]; 
-		printf("master, start looping.\n"); 
 		// Hand out work to next returning slave
 		while(node < g->n) {
 				MPI_Recv(&solution, g->n, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status); 
@@ -158,7 +154,7 @@ void master(int argc, char** argv) {
 				node++; 
 		}
 
-		printf("Master: %f.\n", (double) ((clock() - start)/ CLOCKS_PER_SEC)); 
+		printf("Complete time: %f.\n", (double) ((clock() - start)/ CLOCKS_PER_SEC)); 
 		// Kill all slaves
 		kill_slaves(slaves); 
 }
