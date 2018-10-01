@@ -1,0 +1,3 @@
+mpirun: abort is already in progress...hit ctrl-c again to forcibly terminate
+
+mpirun: Forwarding signal 18 to job
