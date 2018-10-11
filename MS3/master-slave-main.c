@@ -31,7 +31,7 @@ void debug_print(const char *fmt, ...)
 		va_start(args, fmt);
 		//printf(stdout, "rank: %d ", rank); 
 		vfprintf(stdout, fmt, args);
-		fprintf(stdout, "|\n");  
+	//	fprintf(stdout, "|\n");  
 		va_end(args);
 	}
 }
@@ -43,7 +43,7 @@ void slave();
 
 int main(int argc, char** argv) {
 		MPI_Init(&argc, &argv);
-		rank = 10; 
+rank = 10; 
 
 		MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
 		char file[80];
@@ -107,19 +107,22 @@ void master(int argc, char** argv) {
 		/*
 		 * Master node to handle the slave node. 
 		 */
-		time_t start = clock(); 
+		printf("============================================================\n"); 
+		double start = MPI_Wtime(); 
 		int size = 2; 
 		int node = 0 ; 
 		MPI_Comm_size(MPI_COMM_WORLD, &size); 
 		int slaves = size -1; 
 		Input* i = parse_input_from_file(argv[1]); 
 		Graph* g = create_graph(get_node_count(i), get_edge_count(i), get_edge_source(i), get_edge_dest(i));
-		debug_print("master preprocessing. %f.\n", (double) ((clock() - start)/ CLOCKS_PER_SEC)); 
+		
+		printf("graph: %d\n", g->n); 
+		printf("master preprocessing. %f.\n", MPI_Wtime() - start); 
 		if (g == NULL) {
 				kill_slaves(slaves); 
 				return; 
 		}
-		time_t worker_start = clock(); 
+		double  worker_start = MPI_Wtime(); 
 		send_graphs_to_slaves(slaves, g); 
 		node = 0; 
 		// Give each worker initial work. Unless there are less nodes than workers. 
@@ -135,12 +138,13 @@ void master(int argc, char** argv) {
 		for (tasks = tasks; tasks < slaves; tasks++) {
 				MPI_Send(0, 0, MPI_INT, tasks, PLEASE_DIE, MPI_COMM_WORLD); 
 		}
-		debug_print("worker preprocessing. %f.\n", (double) ((clock() - worker_start)/ CLOCKS_PER_SEC)); 
+		printf("worker preprocessing. %f.\n", MPI_Wtime() - worker_start); 
 		MPI_Status status; 
 		int solution[g->n]; 
 		// Hand out work to next returning slave
 		while(node < g->n) {
-	            debug_print("ready to hand out node: %d\n", node); 
+	            
+				debug_print("ready to hand out node: %d\n", node); 
      			MPI_Recv(&solution, g->n, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status); 
 				if(status.MPI_TAG == FOUND_PATH) {
 						debug_print("Master has found path.\n"); 
@@ -155,9 +159,10 @@ void master(int argc, char** argv) {
 				node++; 
 		}
 
-		debug_print("Complete time: %f.\n", (double) ((clock() - start)/ CLOCKS_PER_SEC)); 
+		printf("Complete time: %f.\n", MPI_Wtime() -  start); 
 		// Kill all slaves
-		kill_slaves(slaves); 
+		printf("DONE\n"); 
+    	kill_slaves(slaves); 
 }
 
 void print_graph(Graph* g) {
@@ -184,14 +189,21 @@ void print_solution(int* x, int n) {
 		}
 }
 
-void check_master() {
+int check_master() {
+		int node_ptr; 
 		MPI_Status status; 
-		MPI_Irecv(NULL, 0, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &status); 
+		MPI_Recv(&node_ptr, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &status); 
 		if (status.MPI_TAG == PLEASE_DIE ) {
-				debug_print("Master is done before rank %d.\n", rank);
-				MPI_Finalize(); 
-				exit(0); 
+			debug_print("Master is done before rank %d.\n", rank);
+			return -1; 
+			MPI_Finalize();
+			exit(0); 
+		} else if (status.MPI_TAG != PROCESS_NODE) {
+			debug_print("rank %d recieved no node\n", rank); 
+			debug_print("rank %d node is now %d \n", rank, node_ptr); 
+			return  -1; 
 		}
+	return node_ptr; 
 }
 
 void slave() {
@@ -204,30 +216,36 @@ void slave() {
 
 	int start_node; 
 	MPI_Status status;
-	while(1) {
+	MPI_Recv(&start_node, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &status); 
+	debug_print("rank: %d. got node: %d\n", rank, start_node); 
+
+	double start = MPI_Wtime(); 
+	do {
 		debug_print("rank %d starting loop\n", rank); 
 		Current_solution* sol = create_solution(g->n); 
-		MPI_Recv(&start_node, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &status); 
-		debug_print("rank: %d. got node: %d\n", rank, start_node); 
-		clock_t start = clock();
 		if( status.MPI_TAG == PLEASE_DIE ) {
 				return; 	
 		} else {
 			if (iterative_search(start_node, g, sol, start_node) == FOUND_PATH) {
 				debug_print("rank: %d found solution.\n", rank); 
-				//check_master(); 
+				start_node = check_master(); 
 				MPI_Send(sol->solution_order, g->n, MPI_INT, MASTER, FOUND_PATH, MPI_COMM_WORLD); 
-				debug_print("Loop %d: %f.\n", rank, (double) ((clock() - start)/ CLOCKS_PER_SEC)); 
+				double end = MPI_Wtime(); 
+				printf("slave: %f\n", end - start); //  (double) ((start - end)/ CLOCKS_PER_SEC)); 
+				start = end; 
 				return; 
 			} else {
-				//check_master(); 
 				MPI_Send(NULL, 0, MPI_INT, MASTER, NO_PATH, MPI_COMM_WORLD); 	
-				debug_print("Loop %d: %f.\n", rank, (double) ((clock() - start)/ CLOCKS_PER_SEC)); 
-			}
+				start_node = check_master(); 
+			}	
 		}
-		alloc_solution(sol); 
-		debug_print("rank: %d. Done one loop.\n", rank); 
-	}
+		alloc_solution(sol);
+		double end = MPI_Wtime(); 
+		printf("slave: %f \n",  end - start ); //  (double) ((start - end)/ CLOCKS_PER_SEC)); 
+		start = end; 
+		debug_print("rank: %d. Done one loop.start_node: %d\n", rank, start_node); 
+
+	} while (start_node > 0); 
 	debug_print("rank %d done\n", rank); 
 }
 

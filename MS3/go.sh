@@ -1,11 +1,16 @@
 #!/bin/bash
 
-#SBATCH --job-name=jeadie
-#SBATCH --partition=macondo
-#SBATCH --time=0:6:00
-#SBATCH --nodes=2
-#SBATCH --ntasks-per-node=2
-
+###nodes=$nodes
+###ntasks_per_node= $ntasks_per_node; 
+###time_limit= $time_limit
+###
+#######SBATCH --job-name=jeadie
+####SBATCH --partition=macondo
+####SBATCH --time=$time_limit
+####SBATCH --nodes=$nodes
+####SBATCH --ntasks-per-node=$ntasks_per_node
+###
 module load mpi/openmpi-x86_64
-rm log.txt
-mpirun -n 4 main.exe false/20.txt 2> log.txt
+
+echo $test_file
+mpirun  main.exe $test_file 2> log.txt 

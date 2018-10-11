@@ -1,0 +1,17 @@
+new_tests/5.txt
+============================================================
+graph: 11
+master preprocessing. 0.002417.
+worker preprocessing. 0.000084.
+slave: 0.000120 
+slave: 0.000080 
+slave: 0.000055 
+slave: 0.000085 
+slave: 0.000053 
+slave: 0.000132 
+slave: 0.000199 
+slave: 0.000053 
+Complete time: 0.002851.
+DONE
+slave: 0.000085 
+slave: 0.000083 

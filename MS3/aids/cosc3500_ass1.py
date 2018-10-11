@@ -80,7 +80,7 @@ class Graph(object):
         hamiltonian: will construct a graph with a hamiltonian path if True, else no path. 
         path: location to save the graph formatted to disk.         
         """
-        a = 0
+        a = 3
         g = Graph.create_hamiltonian_path(n, int(n*a)) if hamiltonian else Graph.create_non_hamiltonian_path(n, int(n*a))
         f = open(path, "w")
         f.write(g.output_format())
@@ -134,14 +134,20 @@ class Graph(object):
           formed. In general will be less.
         Returns: graph data structure. 
         """
-        graph = Graph(n)
-        for i in range(edges):
-            a,b = (random.randint(0, n-1), random.randint(0, n-1))
-            if graph.has_edge(a,b):
-                edges+=1
-            graph.add_edge(a,b)
-        graph.remove_hamiltonian_path()
+        graph = Graph.create_hamiltonian_path(n, edges)
+        graph.n = graph.n + 1; 
+     	for i in range(graph.n - 1): 
+            graph.graph[i].append(0)
+        graph.graph.append([0 for x in range(graph.n)])
         return graph
+	
+#		for i in range(edges):
+#            a,b = (random.randint(0, n-1), random.randint(0, n-1))
+#            if graph.has_edge(a,b):
+#                edges+=1
+#            graph.add_edge(a,b)
+#        graph.remove_hamiltonian_path()
+#        return graph
 
 
 def main():
@@ -150,7 +156,7 @@ def main():
     sizes.extend([n for n in range(5, 200)])
  #   sizes.extend([n for n in range(40, 100, 2)])
     for n, i in zip(sizes , range(len(sizes))):
-        Graph.save_graph(n, True, "{0}.txt".format(i))
+        Graph.save_graph(n, False, "{0}.txt".format(i))
         print("{0}.txt".format(i))
 #       Graph.save_graph(n, False, "{0}_False.txt".format(n))a
 #       print("{0}_False.txt".format(n))
