@@ -9,7 +9,11 @@ touch $log_file
 touch $output
 
 
-export test_file="new_tests/31.txt"
-	sbatch --partition=macondo --nodes=$nodes --ntasks-per-node=$ntasks_per_node go.sh
 
+
+
+for slurm in ./slurm*.out; do 
+	python generate_time.py --file="$slurm" --nodes=$nodes --ntasks-per-node=$ntasks_per_node --output_csv="$output"
+	echo "$slurm"
+done 
 
