@@ -5,14 +5,14 @@ import time
 def write_to_output(f, nodes, ntasks, output): 
 	
 	flag = False
-	while not flag: 
-		fi= open(f, "r")
-		lines = ["DONE" in line for line in fi.readlines()] 
-		if True in lines: 
-			flag = True
-
-		else: 
-			time.sleep(5)
+#	while not flag: 
+#		fi= open(f, "r")
+#		lines = ["DONE" in line for line in fi.readlines()] 
+#		if True in lines: 
+#			flag = True
+#
+#		else: 
+#			time.sleep(5)
 		
 	f = open(f, "r")
 	averages = []

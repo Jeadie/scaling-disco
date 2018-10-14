@@ -12,6 +12,7 @@ touch $output
 
 
 
+
 for slurm in ./slurm*.out; do 
 	python generate_time.py --file="$slurm" --nodes=$nodes --ntasks-per-node=$ntasks_per_node --output_csv="$output"
 	echo "$slurm"
